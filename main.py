@@ -1,40 +1,47 @@
 import asyncio
 import os
 from aiogram import Bot, Dispatcher, F
-from aiogram.types import Message, PreCheckoutQuery, LabeledPrice, ContentType
+from aiogram.types import Message, PreCheckoutQuery, LabeledPrice
 from aiogram.filters import CommandStart
 
-# Токен автоматически подтянется из настроек сервера
+# Токен автоматически подтягивается из настроек сервера Render
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
+# 1. Обработчик команды /start
 @dp.message(CommandStart())
 async def start_command(message: Message):
     await message.answer(
-        text="👋 Привет! В этом боте ты можешь купить эксклюзивный Гайд.\n"
+        text="Привет! В этом боте ты можешь купить эксклюзивный Гайд.\n"
              "Стоимость: 50 Telegram Stars.\n"
              "Для покупки нажмите на кнопку ниже 👇"
     )
+    
+    # Отправка счета на оплату через Telegram Stars (XTR)
     await bot.send_invoice(
         chat_id=message.chat.id,
         title="Гайд по заработку в Telegram",
         description="Полное практическое руководство.",
         payload="digital_guide_payload",
-        provider_token="", 
-        currency="XTR",    
+        provider_token="",  # Для Telegram Stars поле оставляют пустым
+        currency="XTR",
         prices=[LabeledPrice(label="Гайд", amount=50)]
     )
 
+# 2. Обработчик предварительной проверки платежа (PreCheckoutQuery)
 @dp.pre_checkout_query()
 async def pre_checkout_handler(pre_checkout_query: PreCheckoutQuery):
     await bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True)
 
-@dp.message(F.content_type == ContentType.SUCCESSFUL_PAYMENT)
-async def success_payment_handler(message: Message) 
-    await message.answer(text="🎉 Спасибо за покупку! Вот тут ваш гайд. https://t.me/+6HlX7mRtuqg5OGEy ")
+# 3. Обработчик успешного платежа
+@dp.message(F.successful_payment)
+async def success_payment_handler(message: Message):
+    # Ссылка вставлена ровно так, как на вашем фото, но без пробела в конце
+    await message.answer(text="🎉 Спасибо за покупку! Вот тут ваш гайд:https://t.me/+6HlX7mRtuqg5OGEy")
 
+# 4. Главная функция запуска бота
 async def main():
     await dp.start_polling(bot)
 
