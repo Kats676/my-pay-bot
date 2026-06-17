@@ -32,8 +32,8 @@ async def pre_checkout_handler(pre_checkout_query: PreCheckoutQuery):
     await bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True)
 
 @dp.message(F.content_type == ContentType.SUCCESSFUL_PAYMENT)
-async def success_payment_handler(message: Message):
-    await message.answer(text="🎉 Спасибо за покупку! Вот тут ваш гайд. : https://t.me/+6HlX7mRtuqg5OGEy.)
+async def success_payment_handler(message: Message) 
+    await message.answer(text="🎉 Спасибо за покупку! Вот тут ваш гайд. https://t.me/+6HlX7mRtuqg5OGEy ")
 
 async def main():
     await dp.start_polling(bot)
