@@ -15,7 +15,7 @@ dp = Dispatcher()
 async def start_command(message: Message):
     await message.answer(
         text="Привет! В этом боте ты можешь купить эксклюзивный Гайд.\n"
-             "Стоимость: 50 Telegram Stars.\n"
+             "Стоимость: 15 Telegram Stars.\n"
              "Для покупки нажмите на кнопку ниже 👇"
     )
     
@@ -27,7 +27,7 @@ async def start_command(message: Message):
         payload="digital_guide_payload",
         provider_token="",  # Для Telegram Stars поле оставляют пустым
         currency="XTR",
-        prices=[LabeledPrice(label="Гайд", amount=50)]
+        prices=[LabeledPrice(label="Гайд", amount=15)]  # Цена изменена на 15 Stars
     )
 
 # 2. Обработчик предварительной проверки платежа (PreCheckoutQuery)
@@ -38,8 +38,8 @@ async def pre_checkout_handler(pre_checkout_query: PreCheckoutQuery):
 # 3. Обработчик успешного платежа
 @dp.message(F.successful_payment)
 async def success_payment_handler(message: Message):
-    # Ссылка вставлена ровно так, как на вашем фото, но без пробела в конце
-    await message.answer(text="🎉 Спасибо за покупку! Вот тут ваш гайд:https://t.me/+6HlX7mRtuqg5OGEy")
+    # Ваша ссылка на канал без лишних пробелов
+    await message.answer(text="🎉 Спасибо за покупку! Вот тут ваш гайд:https://t.me/+jZRAgyhdNas4NWJi")
 
 # 4. Главная функция запуска бота
 async def main():
