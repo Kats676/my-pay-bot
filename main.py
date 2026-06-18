@@ -10,7 +10,6 @@ import aiosqlite
 
 DB_NAME = "vip_bot.db"
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-CHANNEL_ID = -1004311123709
 
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 router = Router()
@@ -157,10 +156,8 @@ async def pre_checkout_handler(pre_checkout_query: PreCheckoutQuery):
     await pre_checkout_query.answer(ok=True)
 
 @router.message(F.successful_payment)
-async def successful_payment_handler(message: Message, bot: Bot):
+async def successful_payment_handler(message: Message):
     user_id = message.from_user.id
-    user_name = message.from_user.username
-    mention = f"@{user_name}" if user_name else f'<a href="tg://user?id={user_id}">{message.from_user.first_name}</a>'
     chosen_title = random.choice(TITLES)
 
     async with aiosqlite.connect(DB_NAME) as db:
@@ -184,27 +181,21 @@ async def successful_payment_handler(message: Message, bot: Bot):
     )
     await message.answer(text, parse_mode="HTML")
 
-    if CHANNEL_ID != -1001234567890:
-        try:
-            channel_text = (
-                f"🎉 <b>Новый участник в VIP CLUB!</b>\n\n"
-                f"👤 Пользователь: {mention}\n"
-                f"👑 Присвоенный титул: <b>{chosen_title}</b>\n\n"
-                f"Добро пожаловать в команду! 🚀"
-            )
-            await bot.send_message(chat_id=CHANNEL_ID, text=channel_text, parse_mode="HTML")
-        except Exception as e:
-            logging.error(f"Не удалось отправить уведомление в канал: {e}")
-
 async def main():
     await init_db()
     bot = Bot(token=BOT_TOKEN)
+    
+    # Принудительно удаляем вебхуки и старые зависшие сессии в Telegram перед запуском
+    logging.info("Удаление старых вебхуков и очистка зависших сессий...")
+    await bot.delete_webhook(drop_pending_updates=True)
+    
     dp = Dispatcher()
     dp.include_router(router)
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
     
