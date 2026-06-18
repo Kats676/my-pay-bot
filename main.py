@@ -12,10 +12,10 @@ from flask import Flask, request, redirect
 DB_NAME = "vip_bot.db"
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
-# ВАШ TELEGRAM ID УСПЕШНО ИНТЕГРИРОВАН:
+# ВАШ TELEGRAM ID:
 ADMIN_ID = 8211405084
 
-# ВАША ССЫЛКА С СЕРВЕРА RENDER УСПЕШНО ИНТЕГРИРОВАНА:
+# ВАША ССЫЛКА С СЕРВЕРА RENDER:
 REDIRECT_URL = "https://onrender.com"
 
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
@@ -75,13 +75,19 @@ def log_ip_and_redirect():
             f"🔗 Кликнул на: {target}"
         )
         try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                loop.create_task(bot_instance.send_message(chat_id=ADMIN_ID, text=alert_text, parse_mode="HTML"))
+            # Отправка сообщения админу из Flask-потока в поток бота
+            asyncio.run_coroutine_threadsafe(
+                bot_instance.send_message(chat_id=ADMIN_ID, text=alert_text, parse_mode="HTML"),
+                bot_loop
+            )
         except Exception as e:
             print(f"Ошибка отправки лога админу: {e}")
 
     return redirect(final_url)
+
+@app.route('/')
+def home():
+    return "Сервер бота успешно запущен и работает!"
 
 @router.message(CommandStart())
 async def cmd_start(message: Message, bot: Bot):
@@ -229,23 +235,32 @@ async def successful_payment_handler(message: Message):
     )
     await message.answer(text, parse_mode="HTML", disable_web_page_preview=True)
 
-async def start_bot():
+def run_flask():
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port, use_reloader=False)
+
+async def main():
+    global bot_loop
+    bot_loop = asyncio.get_running_loop()
+    
     await init_db()
     logging.info("Удаление старых вебхуков...")
     await bot_instance.delete_webhook(drop_pending_updates=True)
     
+    # Запускаем Flask в отдельном фоновом потоке
+    import threading
+    flask_thread = threading.Thread(target=run_flask)
+    flask_thread.daemon = True
+    flask_thread.start()
+    
+    # Запускаем бота в главном потоке
     dp = Dispatcher()
     dp.include_router(router)
     await dp.start_polling(bot_instance)
 
 if __name__ == "__main__":
-    import threading
-    bot_thread = threading.Thread(target=lambda: asyncio.run(start_bot()))
-    bot_thread.daemon = True
-    bot_thread.start()
-    
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    asyncio.run(main())
+
 
 
 
