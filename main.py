@@ -10,9 +10,6 @@ import aiosqlite
 
 DB_NAME = "vip_bot.db"
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-
-
-# ПОДСТАВЬТЕ СЮДА ID ВАШЕГО КАНАЛА (Обязательно должен начинаться с -100):
 CHANNEL_ID = -1004311123709
 
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
@@ -76,15 +73,15 @@ async def cmd_start(message: Message, bot: Bot):
 
     bot_info = await bot.get_me()
     text = (
-        f"👋 **Добро пожаловать в VIP CLUB!**\n\n"
+        f"👋 <b>Добро пожаловать в VIP CLUB!</b>\n\n"
         f"Здесь вы можете получить:\n"
         f"• VIP-доступ в закрытый канал\n"
         f"• Гайд по заработку в Telegram\n"
         f"• Случайный VIP-титул\n"
-        f"• Доступ к канале отзывов\n"
-        f"• *Благодарность от основателя*\n"
+        f"• Доступ к каналу отзывов\n"
+        f"• <b>Благодарность от основателя</b>\n"
         f"• Поддержку через @dmitriiFadZe\n\n"
-        f"💡 **Условия покупки:**\n"
+        f"💡 <b>Условия покупки:</b>\n"
         f"Обычная стоимость — 15 Telegram Stars.\n"
         f"Пригласите 3 друзей по вашей ссылке, и цена снизится до 10 Stars!\n\n"
         f"🔗 Ваша ссылка: https://t.me{bot_info.username}?start={user_id}"
@@ -93,7 +90,7 @@ async def cmd_start(message: Message, bot: Bot):
     inline_pay_kb = InlineKeyboardMarkup(
         inline_keyboard=[[InlineKeyboardButton(text="💎 Оплатить доступ", callback_data="buy_via_inline")]]
     )
-    await message.answer(text, parse_mode="Markdown", reply_markup=main_kb)
+    await message.answer(text, parse_mode="HTML", reply_markup=main_kb)
     await message.answer("Вы можете приобрести доступ прямо сейчас:", reply_markup=inline_pay_kb)
 
 async def check_and_pay(message: Message, user_id: int):
@@ -163,7 +160,7 @@ async def pre_checkout_handler(pre_checkout_query: PreCheckoutQuery):
 async def successful_payment_handler(message: Message, bot: Bot):
     user_id = message.from_user.id
     user_name = message.from_user.username
-    mention = f"@{user_name}" if user_name else f"[{message.from_user.first_name}](tg://user?id={user_id})"
+    mention = f"@{user_name}" if user_name else f'<a href="tg://user?id={user_id}">{message.from_user.first_name}</a>'
     chosen_title = random.choice(TITLES)
 
     async with aiosqlite.connect(DB_NAME) as db:
@@ -179,23 +176,23 @@ async def successful_payment_handler(message: Message, bot: Bot):
                 chosen_title = existing_title
 
     text = (
-        f"🎉 **Спасибо за покупку! Добро пожаловать в VIP CLUB.**\n\n"
-        f"🎁 Ваш случайный титул: *{chosen_title}*\n\n"
+        f"🎉 <b>Спасибо за покупку! Добро пожаловать в VIP CLUB.</b>\n\n"
+        f"🎁 Ваш случайный титул: <b>{chosen_title}</b>\n\n"
         f"📘 Гайд: https://t.me+jZRAgyhdNas4NWJi\n"
         f"💬 Отзывы: https://t.me+jWdrP1oXj6pjZDg6\n"
         f"👑 VIP-канал: https://t.me+kjSna0KD3CxkZTM6"
     )
-    await message.answer(text, parse_mode="Markdown")
+    await message.answer(text, parse_mode="HTML")
 
     if CHANNEL_ID != -1001234567890:
         try:
             channel_text = (
-                f"🎉 **Новый участник в VIP CLUB!**\n\n"
+                f"🎉 <b>Новый участник в VIP CLUB!</b>\n\n"
                 f"👤 Пользователь: {mention}\n"
-                f"👑 Присвоенный титул: *{chosen_title}*\n\n"
+                f"👑 Присвоенный титул: <b>{chosen_title}</b>\n\n"
                 f"Добро пожаловать в команду! 🚀"
             )
-            await bot.send_message(chat_id=CHANNEL_ID, text=channel_text, parse_mode="Markdown")
+            await bot.send_message(chat_id=CHANNEL_ID, text=channel_text, parse_mode="HTML")
         except Exception as e:
             logging.error(f"Не удалось отправить уведомление в канал: {e}")
 
@@ -208,6 +205,9 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+
+    
 
 
 
