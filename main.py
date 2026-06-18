@@ -8,9 +8,6 @@ from aiogram.filters import CommandStart
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
-if not BOT_TOKEN:
-raise ValueError("BOT_TOKEN не найден в Render")
-
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
@@ -36,36 +33,18 @@ async def start_command(message: Message):
 
 ```
 await message.answer(
-    """
-```
-
-💎 VIP CLUB BOT
-
-Добро пожаловать!
-
-🔥 Возможности бота:
-
-📘 Гайд по заработку в Telegram
-💎 Доступ в VIP CLUB
-⭐ Доступ в канал отзывов
-🏆 Случайный VIP-титул
-🎁 Спасибо от основателя
-👑 Статус VIP участника
-
-⭐ Стоимость: 15 Telegram Stars
-
-💬 Поддержка:
-@dmitriiFadZe
-
-Для покупки используйте счёт ниже 👇
-"""
+    "💎 VIP CLUB BOT\n\n"
+    "📘 Гайд по заработку в Telegram\n"
+    "💎 VIP CLUB\n"
+    "⭐ Канал отзывов\n"
+    "🏆 Случайный титул\n\n"
+    "Стоимость: 15 Telegram Stars ⭐"
 )
 
-```
 await bot.send_invoice(
     chat_id=message.chat.id,
     title="VIP CLUB",
-    description="VIP доступ + Гайд + Титул",
+    description="VIP доступ + Гайд",
     payload="vip_access",
     provider_token="",
     currency="XTR",
@@ -92,10 +71,10 @@ async def success_payment_handler(message: Message):
 title = random.choice(TITLES)
 
 await message.answer(
+    f"""
 ```
 
-f"""
-🎉 Спасибо за покупку VIP CLUB!
+🎉 Спасибо за покупку!
 
 🏆 Ваш титул:
 {title}
@@ -106,22 +85,20 @@ f"""
 💎 VIP канал:
 {VIP_LINK}
 
-⭐ Канал отзывов:
+⭐ Отзывы:
 {REVIEWS_LINK}
 
-🤝 Спасибо от основателя!
+🤝 Спасибо от основателя
 
 💬 Поддержка:
 @dmitriiFadZe
-
-Добро пожаловать в VIP CLUB 🚀
 """
 )
 
 async def main():
-print("Бот запущен")
 await dp.start_polling(bot)
 
 if **name** == "**main**":
 asyncio.run(main())
+
 
