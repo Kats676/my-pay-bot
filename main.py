@@ -9,7 +9,8 @@ from aiogram.types import Message, PreCheckoutQuery, LabeledPrice, ReplyKeyboard
 import aiosqlite
 
 DB_NAME = "vip_bot.db"
-BOT_TOKEN = os.getenv("8475502451:AAE8lV8ReeQu7DD-4h0qnfc9YFT4-UHibQM")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+
 
 # ПОДСТАВЬТЕ СЮДА ID ВАШЕГО КАНАЛА (Обязательно должен начинаться с -100):
 CHANNEL_ID = -1004311123709
