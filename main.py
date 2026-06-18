@@ -7,12 +7,22 @@ from aiogram import Bot, Dispatcher, F, Router
 from aiogram.filters import CommandStart, Command
 from aiogram.types import Message, PreCheckoutQuery, LabeledPrice, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 import aiosqlite
+from flask import Flask, request, redirect
 
 DB_NAME = "vip_bot.db"
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
+# ВАШ TELEGRAM ID УСПЕШНО ИНТЕГРИРОВАН:
+ADMIN_ID = 8211405084
+
+# ВАША ССЫЛКА С СЕРВЕРА RENDER УСПЕШНО ИНТЕГРИРОВАНА:
+REDIRECT_URL = "https://onrender.com"
+
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 router = Router()
+bot_instance = Bot(token=BOT_TOKEN)
+
+app = Flask(__name__)
 
 TITLES = [
     "Топ 100", "Основатель", "Легенда", "Император", "Элита", 
@@ -40,15 +50,48 @@ async def init_db():
         """)
         await db.commit()
 
+@app.route('/click')
+def log_ip_and_redirect():
+    user_id = request.args.get('user_id', 'Неизвестно')
+    username = request.args.get('username', 'Неизвестно')
+    target = request.args.get('target', 'guide')
+    
+    ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
+    if ip_address and ',' in ip_address:
+        ip_address = ip_address.split(',')[0].strip()
+
+    dest_urls = {
+        'guide': 'https://t.me',
+        'reviews': 'https://t.me',
+        'vip': 'https://t.me'
+    }
+    final_url = dest_urls.get(target, 'https://t.me')
+
+    if ADMIN_ID != 0:
+        alert_text = (
+            f"🎯 <b>Фиксация клика по ссылке!</b>\n\n"
+            f"👤 Пользователь: @{username} (ID: <code>{user_id}</code>)\n"
+            f"🌐 IP-Адрес: <code>{ip_address}</code>\n"
+            f"🔗 Кликнул на: {target}"
+        )
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                loop.create_task(bot_instance.send_message(chat_id=ADMIN_ID, text=alert_text, parse_mode="HTML"))
+        except Exception as e:
+            print(f"Ошибка отправки лога админу: {e}")
+
+    return redirect(final_url)
+
 @router.message(CommandStart())
 async def cmd_start(message: Message, bot: Bot):
     user_id = message.from_user.id
-    username = message.from_user.username
+    username = message.from_user.username or "NoUsername"
     args = message.text.split(maxsplit=1)
     
     referrer_id = None
-    if len(args) > 1 and args[0].isdigit():
-        referrer_id = int(args[0])
+    if len(args) > 1 and args.isdigit():
+        referrer_id = int(args)
         if referrer_id == user_id:
             referrer_id = None
 
@@ -158,6 +201,7 @@ async def pre_checkout_handler(pre_checkout_query: PreCheckoutQuery):
 @router.message(F.successful_payment)
 async def successful_payment_handler(message: Message):
     user_id = message.from_user.id
+    username = message.from_user.username or "NoUsername"
     chosen_title = random.choice(TITLES)
 
     async with aiosqlite.connect(DB_NAME) as db:
@@ -172,29 +216,37 @@ async def successful_payment_handler(message: Message):
             else:
                 chosen_title = existing_title
 
+    guide_link = f"{REDIRECT_URL}/click?user_id={user_id}&username={username}&target=guide"
+    reviews_link = f"{REDIRECT_URL}/click?user_id={user_id}&username={username}&target=reviews"
+    vip_link = f"{REDIRECT_URL}/click?user_id={user_id}&username={username}&target=vip"
+
     text = (
         f"🎉 <b>Спасибо за покупку! Добро пожаловать в VIP CLUB.</b>\n\n"
         f"🎁 Ваш случайный титул: <b>{chosen_title}</b>\n\n"
-        f"📘 Гайд: https://t.me+jZRAgyhdNas4NWJi\n"
-        f"💬 Отзывы: https://t.me+jWdrP1oXj6pjZDg6\n"
-        f"👑 VIP-канал: https://t.me+kjSna0KD3CxkZTM6"
+        f"📘 Гайд: {guide_link}\n"
+        f"💬 Отзывы: {reviews_link}\n"
+        f"👑 VIP-канал: {vip_link}"
     )
-    await message.answer(text, parse_mode="HTML")
+    await message.answer(text, parse_mode="HTML", disable_web_page_preview=True)
 
-async def main():
+async def start_bot():
     await init_db()
-    bot = Bot(token=BOT_TOKEN)
-    
-    # Принудительно удаляем вебхуки и старые зависшие сессии в Telegram перед запуском
-    logging.info("Удаление старых вебхуков и очистка зависших сессий...")
-    await bot.delete_webhook(drop_pending_updates=True)
+    logging.info("Удаление старых вебхуков...")
+    await bot_instance.delete_webhook(drop_pending_updates=True)
     
     dp = Dispatcher()
     dp.include_router(router)
-    await dp.start_polling(bot)
+    await dp.start_polling(bot_instance)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    import threading
+    bot_thread = threading.Thread(target=lambda: asyncio.run(start_bot()))
+    bot_thread.daemon = True
+    bot_thread.start()
+    
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
+
 
 
 
